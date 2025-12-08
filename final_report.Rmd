@@ -258,6 +258,9 @@ plt.subplots_adjust(
     wspace=0.4,  # horizontal space
     hspace=0.6   # vertical space
 )
+# Save the figure
+fig.savefig("graphs/all_variables_plot.png", dpi=300, bbox_inches="tight")
+
 plt.show()
 ```
 
