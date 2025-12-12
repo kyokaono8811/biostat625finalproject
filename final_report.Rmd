@@ -15,7 +15,7 @@ GitHub Link: <https://github.com/kyokaono8811/biostat625finalproject.git>
 Contributions: 
 
 -   Xiaoyu Lin — "Data description, Data cleaning..."\
--   Kyoka Ono — "..."
+-   Kyoka Ono — "Model Training, Evaluation Metrics..."
 
 # Abstract
 
@@ -27,8 +27,8 @@ Heart disease is a leading cause of death for adults in the U.S, and early detec
 knitr::opts_chunk$set(
   comment = "",
   echo = FALSE,
-  message = TRUE,
-  warning = TRUE
+  message = FALSE,
+  warning = FALSE
 )
 ```
 
@@ -301,7 +301,6 @@ import time
 import shap
 ```
 
-
 ```{python}
 X = heart_clean.drop(columns=["HadHeartAttack"])
 y = heart_clean["HadHeartAttack"]
@@ -387,6 +386,8 @@ pred_gam_proba_test = gam.predict_proba(X_test) # actual probabilities (between 
 
 ### **Evaluation Metrics**
 
+1. Logistic Regression
+
 ```{python}
 # F1 Score 
 f1_score_test_logistic = f1_score(y_test, pred_logistic_test) 
@@ -408,7 +409,7 @@ print(f"Accuracy: {accuracy_test_logistic:.4f}\nPrecision: {precision_test_logis
 
 ```{python}
 # False Positive Rate, True Positive Rate 
-fpr_test_logistic, tpr_test_logistic, thresholds_test_logistic = roc_curve(Y_test, pred_logistic_proba_test[:,1])
+fpr_test_logistic, tpr_test_logistic, thresholds_test_logistic = roc_curve(y_test, pred_logistic_proba_test[:,1])
         
 # AUC
 roc_auc_test_logistic = auc(fpr_test_logistic, tpr_test_logistic)
@@ -428,6 +429,7 @@ plt.legend(loc='lower right')
 plt.grid(True)
 plt.show()
 ```
+2. Random Forest
 
 ```{python}
 # F1 
@@ -488,6 +490,7 @@ shap_values = explainer.shap_values(X_test)
 shap.summary_plot(shap_values, X_test.sample(n = 1000, random_state = 123))
 plt.show()
 ```
+3. GAM
 
 ```{python}
 # F1 
