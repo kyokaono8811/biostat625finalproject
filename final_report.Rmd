@@ -19,7 +19,7 @@ Contributions:
 
 # Abstract
 
-Heart disease is a leading cause of death for adults in the U.S, and early detection of key risk factors is essential for prevention. In this study, we apply multiple machine learning methods, including logistic regression, random forest, and GAM to identify the significant risk factors of heart disease. We then evaluate model performance and compare variable importance across methods using evaluation Metrics.
+Heart disease is a leading cause of death for adults in the U.S, and early detection of key risk factors is essential for prevention. In this study, we apply multiple machine learning methods, including logistic regression, random forest, and logistic GAM to identify the significant risk factors of heart disease. We then evaluate model performance and compare variable importance across methods using evaluation metrics. All the models yielded low precision due to data collecting method, they all computed high AUROC for classifying heart attack and non heart attack patients.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -55,7 +55,7 @@ pd.set_option('future.no_silent_downcasting', True)
 
 Heart disease affects millions of individuals in the U.S, making early identification of risk factors a high public-health priority. Traditional statistical approaches have identified several predictors, but machine learning methods can capture more complex, nonlinear relationships.
 
-This project applies several different machine learning algorithms to the `heart_2022_no_nans.csv` dataset from the CDC Behavioral Risk Factor Surveillance System (BRFSS) on Kaggle. Our goal is to determine which model outputs the highest evaluation metric for predicting heart attack.
+This project applies several different machine learning algorithms to the `heart_2022_no_nans.csv` dataset from the CDC Behavioral Risk Factor Surveillance System (BRFSS) on Kaggle. Our goal is to is to find the model that best reflects the association with heart attack.
 
 # Methods
 
@@ -272,7 +272,7 @@ Low pairwise correlations do not imply weak predictive power for nonlinear effec
 
 Highly imbalanced classes may affect model performance if not addressed, so we will use the method of undersampling or class weights during model training. And to improve model performance, the skewed numerical variables should be standardized or centered, especially for algorithms sensitive to scale (e.g. logistic regression).
 
-We will use logistic regression, random forest, and Logistic General Additive Model to build our models, then check wich method gives the most accurate model.
+We will use logistic regression, random forest, and Logistic General Additive Model to build our models, then check which method gives the best model performance.
 
 ```{r}
 #reticulate::py_install("scikit-learn")
@@ -482,7 +482,7 @@ results
 
 ```
 
-The logistic regression has an accuracy of 71%, precision of 13 %, recall of 76%, and F1 score of 22%. The AUROC is 81%. It took 0.5 seconds to run the model.
+The logistic regression has an accuracy of 71%, precision of 13 %, recall of 76%, and F1 score of 22%. The AUROC is 81%. It took 0.35 seconds to run the model.
 
 The random forest has an accuracy of 67%, precision of 11%, recall of  72%, and F1 score of 19%. The AUROC is 76%. The model training time was 1 second.
 
@@ -490,7 +490,7 @@ The Logistic Generative Additive Model has an accuracy of 71%, precision of 13%,
 
 # Conclusion
 
-Logistic Regression has the highest accuracy metric, indicating that it has the highest correction rate for evaluating patients who both did and did not have a heart attack history. Random Forest shows the highest precision score, meaning it has the highest correction rate for evaluating patients who had a heart attack in real life out of the patients who were predicted to have heart attack. However, all of these models have significantly low precision scores, making them unreliable for precision evaluation. This result is anticipated because the heart attack has already happened in the past, and the variables are collected to represent association with heart attack history and not intended for prediction purposes. Logistic Regression has the highest F1 score, and it implies that it may be the optimal model for evaluating heart attack prevalence among the three models because F1 score takes the balance between precision and recall into account. All of the F1 scores are low, due to the significant low values in precision. But our models are good at finding people who do have heart disease, that is, the models can still meaningfully separate high-risk from low-risk patients..
+Logistic Regression has the highest accuracy metric, indicating that it has the highest correction rate for evaluating patients who both did and did not have a heart attack history. Random Forest shows the highest precision score, meaning it has the highest correction rate for evaluating patients who had a heart attack in real life out of the patients who were predicted to have heart attack. However, all of these models have significantly low precision scores, making them unreliable for precision evaluation. This result is anticipated because the heart attack has already happened in the past, and the variables are collected to represent association with heart attack history and not intended for prediction purposes. Logistic Regression has the highest F1 score, and it implies that it may be the optimal model for evaluating heart attack prevalence among the three models because F1 score takes the balance between precision and recall into account. All of the F1 scores are low, due to the significant low values in precision. But our models are good at finding people who do have heart disease, that is, the models can still meaningfully separate high-risk from low-risk patients.
 
 # Future Work
 
