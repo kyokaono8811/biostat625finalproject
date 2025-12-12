@@ -427,6 +427,7 @@ plt.ylabel('True Positive Rate = Sensitivity')
 plt.title('Testing curve for Logistic Regression (ROC curve)')
 plt.legend(loc='lower right')
 plt.grid(True)
+plt.savefig("graphs/log_reg_curve.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```
 2. Random Forest
@@ -471,25 +472,10 @@ plt.ylabel('True Positive Rate = Sensitivity')
 plt.title('Testing curve for Random Forest (ROC curve)')
 plt.legend(loc='lower right')
 plt.grid(True)
+plt.savefig("graphs/ran_for_curve.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```
 
-Shapley values for Random Forest 
-
-```{python}
-random_forest = RandomForestClassifier(random_state = 123)
-
-start = time.time()
-random_forest.fit(X_train, y_train)
-end = time.time()
-
-print(f"Elapsed: {end - start:.3f} seconds")
-
-explainer = shap.TreeExplainer(random_forest)
-shap_values = explainer.shap_values(X_test)
-shap.summary_plot(shap_values, X_test.sample(n = 1000, random_state = 123))
-plt.show()
-```
 3. GAM
 
 ```{python}
@@ -532,6 +518,7 @@ plt.ylabel('True Positive Rate = Sensitivity')
 plt.title('Testing curve for Logistic GAM (ROC curve)')
 plt.legend(loc='lower right')
 plt.grid(True)
+plt.savefig("graphs/gam_curve.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```
 
