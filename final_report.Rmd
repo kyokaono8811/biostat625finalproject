@@ -1,21 +1,21 @@
 ---
 title: "The Application of Machine Learning on Risk Classification of Heart Disease"
 author:
-  - Xiaoyu Lin
-  - Kyoka Ono
+- Xiaoyu Lin
+- Kyoka Ono
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-geometry: margin=1in
+geometry: margin=0.75in
+fontsize: 11pt
 ---
 
 # Abstract
 
 GitHub Link: <https://github.com/kyokaono8811/biostat625finalproject.git>
 
-Heart disease is a leading cause of death for adults in the U.S, and early detection of key risk factors is essential for prevention.
-
-In this study, we apply multiple machine learning methods, including logistic regression, random forest, GAM, ikNN, XGBoost, and RNN identify the significant risk factors of heart disease. We then evaluate model performance and compare variable importance across methods using evaluation Metrics.
+Heart disease is a leading cause of death for adults in the U.S, and early detection of key risk factors is essential for prevention. In this study, we apply multiple machine learning methods, including logistic regression, random forest, GAM, ikNN, XGBoost, and RNN identify the significant risk factors of heart disease. We then evaluate model performance and compare variable importance across methods using evaluation Metrics.
 
 (Some results conclusion)
 
@@ -41,12 +41,19 @@ knitr::opts_chunk$set(
 library(reticulate)
 ```
 
-```{python}
+```{r}
 #reticulate::py_install("matplotlib")
+#reticulate::py_install("pandas")
+#reticulate::py_install("seaborn")
+```
+
+
+```{python}
 import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import seaborn as sns
 pd.set_option('future.no_silent_downcasting', True)
 ```
 
@@ -64,9 +71,6 @@ The dataset contains 40 variables for over 200,000 survey participants (all comp
 
 ```{python}
 heart_data = pd.read_csv("data/heart_2022_no_nans.csv")
-
-# first couple rows of the data
-heart_data.head()
 
 # Number of participants (rows) and variables (columns)
 print("\nNumber of participants:", heart_data.shape[0])
@@ -126,147 +130,35 @@ Predictor Variables:
 We would like to create dummy variables for categorical variables and merge equivalent levels.
 
 ```{python}
-heart_clean = heart_data.copy()
-
-# Binary variables: Yes = 1, No = 0
-binary_vars = ["HadHeartAttack", "PhysicalActivities", "HadStroke", "AlcoholDrinkers"]
-
-for var in binary_vars:
-    heart_clean[var] = heart_clean[var].map({"Yes": 1, "No": 0})
-
-# Sex: Female = 0, Male = 1
-heart_clean["Sex"] = heart_clean["Sex"].map({"Female": 0, "Male": 1})
-
-# AgeCategory: Youngest = 1, Oldest = 13
-age_order = [
-    "Age 18 to 24",
-    "Age 25 to 29",
-    "Age 30 to 34",
-    "Age 35 to 39",
-    "Age 40 to 44",
-    "Age 45 to 49",
-    "Age 50 to 54",
-    "Age 55 to 59",
-    "Age 60 to 64",
-    "Age 65 to 69",
-    "Age 70 to 74",
-    "Age 75 to 79",
-    "Age 80 or older"
-]
-
-# Create dictionary: each age category → number (1 to 13)
-age_map = {age: i+1 for i, age in enumerate(age_order)}
-
-heart_clean["AgeCategory"] = heart_clean["AgeCategory"].map(age_map)
-
-# HadDiabetes: Yes = 1, No = 0
-heart_clean["HadDiabetes"] = heart_clean["HadDiabetes"].replace({
-    "Yes": 1,
-    "Yes, but only during pregnancy (female)": 1,
-    "No": 0,
-    "No, pre-diabetes or borderline diabetes": 0
-})
-
-# SmokerStatus: Never smoked = 0, Former smoker = 1, Current smoker = 2
-heart_clean["SmokerStatus"] = heart_clean["SmokerStatus"].replace({
-    "Never smoked": 0,
-    "Former smoker": 1,
-    "Current smoker - now smokes every day": 2,
-    "Current smoker - now smokes some days": 2
-})
-
-# RaceEthnicityCategory: White = 0, Black = 1, Hispanic = 2, Multiracial = 3, Other = 4
-heart_clean["RaceEthnicityCategory"] = heart_clean["RaceEthnicityCategory"].replace({
-    "White only, Non-Hispanic": 0,    
-    "Black only, Non-Hispanic": 1,    
-    "Hispanic": 2,                     
-    "Multiracial, Non-Hispanic": 3,  
-    "Other race only, Non-Hispanic": 4
-})
+from analysis.cleaning import clean_data
+heart_clean = clean_data(heart_data)
 ```
 
 ### **Data Description**
 
+Let's look at the distribution of the variables
+
 ```{python}
-# Variables
-categorical_vars = [
-    "HadHeartAttack", "Sex", "PhysicalActivities", "HadStroke",
-    "HadDiabetes", "SmokerStatus", "RaceEthnicityCategory",
-    "AgeCategory", "AlcoholDrinkers"
-]
-
-numeric_vars = ["SleepHours", "BMI"]
-
-all_vars = categorical_vars + numeric_vars
-
-# Order of categorical variables
-category_orders = {
-    "HadHeartAttack": [0, 1],
-    "Sex": [0, 1],
-    "PhysicalActivities": [0, 1],
-    "HadStroke": [0, 1],
-    "HadDiabetes": [0, 1],
-    "AlcoholDrinkers": [0, 1],
-    "SmokerStatus": [0, 1, 2],
-    "RaceEthnicityCategory": [0, 1, 2, 3, 4],
-    "AgeCategory": list(range(1, 14))
-}
-
-# Layout
-n_plots = len(all_vars)
-n_cols = 3
-n_rows = (n_plots + n_cols - 1) // n_cols
-
-fig, axes = plt.subplots(
-    n_rows,
-    n_cols,
-    figsize=(20, 4 * n_rows),
-    sharey=False
-)
-
-axes = axes.flatten()
-
-for i, col in enumerate(all_vars):
-    ax = axes[i]
-
-    # Categorical variables: bar plots
-    if col in categorical_vars:
-        counts = heart_clean[col].value_counts().reindex(category_orders[col])
-        ax.bar(counts.index, counts.values)
-        ax.set_xticks(category_orders[col])
-        ax.tick_params(axis="x", labelrotation=45, labelsize=9)
-
-    # Numerical variables: histograms
-    else:
-        ax.hist(heart_clean[col], bins=20)
-        ax.tick_params(axis="x", labelrotation=45, labelsize=9)
-
-    ax.set_title(col, fontsize=12)
-    ax.tick_params(axis="y", labelsize=9)
-    ax.set_xlabel("")
-    ax.set_ylabel("")
-
-# Remove empty panels
-for j in range(len(all_vars), len(axes)):
-    fig.delaxes(axes[j])
-
-# Shared y-axis label
-fig.text(0.04, 0.5, "Count", va="center", rotation="vertical", fontsize=12)
-
-# Adjust spacing
-plt.subplots_adjust(
-    wspace=0.4,  # horizontal space
-    hspace=0.6   # vertical space
-)
-# Save the figure
-fig.savefig("graphs/all_variables_plot.png", dpi=300, bbox_inches="tight")
-
+from analysis.description import description
+description(heart_clean)
 plt.show()
 ```
 
 From the graph above, we can see that some categorical variables such as `HadHeartAttack`, `HadStroke`, and `RaceEthnicityCategory` exhibit noticeable class imbalance. Highly imbalanced classes may affect model performance if not addressed, so we will use the method of undersampling the majority class during model training. Other categorical variables are more balanced.
 
 Numerical variables like `AgeCategory`, `SleepHours`, and `BMI` show skewed distributions. To improve model performance, these variables should be standardized or centered, especially for algorithms sensitive to scale (e.g. logistic regression).
+
+Now Let us build a correlation table. We use spearman correlation because the dataset contains a mixture of binary, ordinal, and continuous variables. Spearman does not assume linearity or normality and is appropriate for ranked relationships, making it a better measure of association than Pearson for this dataset.
+
+```{python}
+from analysis.correlation import correlation
+correlation(heart_clean)
+plt.show()
+```
+
+All pairwise correlations were relatively weak, indicating that no individual predictor shows a strong linear association with heart attack or with each other. This is expected in multi-factor health datasets, where the outcome is influenced by many small effects rather than a single dominant variable.
+
+Low pairwise correlations do not imply weak predictive power for nonlinear effects, interactions, and combined contributions can still provide meaningful classification performance in multivariate models.
 
 ### **Models Applied**
 
