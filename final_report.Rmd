@@ -55,7 +55,7 @@ pd.set_option('future.no_silent_downcasting', True)
 
 Heart disease affects millions of individuals in the U.S, making early identification of risk factors a high public-health priority. Traditional statistical approaches have identified several predictors, but machine learning methods can capture more complex, nonlinear relationships.
 
-This project applies several different machine learning algorithms to the `heart_2022_no_nans.csv` dataset from the CDC Behavioral Risk Factor Surveillance System (BRFSS) on Kaggle. Our goal is to determine which model outputs the highest evaluation metric for predicting heart attack, and which variables significantly associated with having had a heart attack?
+This project applies several different machine learning algorithms to the `heart_2022_no_nans.csv` dataset from the CDC Behavioral Risk Factor Surveillance System (BRFSS) on Kaggle. Our goal is to determine which model outputs the highest evaluation metric for predicting heart attack.
 
 # Methods
 
@@ -121,7 +121,7 @@ Predictor Variables:
 
 **Data Cleaning**
 
-We would like to create dummy variables for categorical variables and merge equivalent levels.
+We would like to create dummy variables for categorical variables and merge equivalent levels. Specifically, we recode the `HadDiabetes` variable so that "Yes, but only during pregnancy (female)" is treated as "Yes", and "No, pre-diabetes or borderline diabetes" is treated as "No". And "Current smoker – now smokes every day"/"Current smoker – now smokes some days" both as "Current smoker".
 
 ```{python}
 from analysis.cleaning import clean_data
@@ -272,6 +272,8 @@ Low pairwise correlations do not imply weak predictive power for nonlinear effec
 
 Highly imbalanced classes may affect model performance if not addressed, so we will use the method of undersampling or class weights during model training. And to improve model performance, the skewed numerical variables should be standardized or centered, especially for algorithms sensitive to scale (e.g. logistic regression).
 
+We will use logistic regression, random forest, and Logistic General Additive Model to build our models, then check wich method gives the most accurate model.
+
 ```{r}
 #reticulate::py_install("scikit-learn")
 #reticulate::py_install("imblearn")
@@ -376,96 +378,73 @@ pred_gam_proba_test = gam.predict_proba(X_test) # actual probabilities (between 
 
 ### **Evaluation Metrics**
 
-1. Logistic Regression
-
 ```{python, results = "hide"}
+# 1. Logistic Regression
 # False Positive Rate, True Positive Rate 
 fpr_test_logistic, tpr_test_logistic, thresholds_test_logistic = roc_curve(y_test, pred_logistic_proba_test[:,1])
         
 # AUC
 roc_auc_test_logistic = auc(fpr_test_logistic, tpr_test_logistic)
-
-# ROC
-plt.figure(figsize=(4, 2))
-plt.plot(fpr_test_logistic, tpr_test_logistic, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_logistic:.2f})')
-plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
-
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-
-plt.xlabel('False Positive Rate = 1 - Specificity', fontsize=8)
-plt.ylabel('True Positive Rate = Sensitivity', fontsize=8)
-plt.title('Testing curve for Logistic Regression (ROC curve)', fontsize=9)
-plt.xticks(fontsize=7)
-plt.yticks(fontsize=7)
-
-plt.legend(loc='lower right')
-plt.grid(True)
-plt.savefig("graphs/log_reg_curve.png", dpi=300, bbox_inches="tight")
-plt.show()
 ```
 
-2. Random Forest
-
 ```{python, results = "hide"}
+# 2. Random Forest
 # Compute ROC curve and area under the curve
 # False Positive Rate, True Positive Rate 
 fpr_test_rf, tpr_test_rf, thresholds_test_rf = roc_curve(y_test, pred_rf_proba_test[:,1])
         
 # AUC
 roc_auc_test_rf = auc(fpr_test_rf, tpr_test_rf)
-
-# ROC
-plt.figure(figsize=(4, 2))
-plt.plot(fpr_test_rf, tpr_test_rf, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_rf:.2f})')
-plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
-
-
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
-
-plt.xlabel('False Positive Rate = 1- Specificity', fontsize=8)
-plt.ylabel('True Positive Rate = Sensitivity', fontsize=8)
-plt.title('Testing curve for Random Forest (ROC curve)', fontsize=9)
-plt.xticks(fontsize=7)
-plt.yticks(fontsize=7)
-
-plt.legend(loc='lower right')
-plt.grid(True)
-plt.savefig("graphs/ran_for_curve.png", dpi=300, bbox_inches="tight")
-plt.show()
 ```
 
-3. GAM
-
 ```{python, results = "hide"}
+# 3. GAM
 # Compute ROC curve and area under the curve
 # False Positive Rate, True Positive Rate 
 fpr_test_gam, tpr_test_gam, thresholds_test_gam = roc_curve(y_test, pred_gam_proba_test)
         
 # AUC
 roc_auc_test_gam = auc(fpr_test_gam, tpr_test_gam)
+```
 
-# ROC
-plt.figure(figsize=(4, 2))
-plt.plot(fpr_test_gam, tpr_test_gam, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_gam:.2f})')
-plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
+```{python, results = "hide"}
+# Create ROC compare figure
+plt.figure(figsize=(5, 3))
 
+# Logistic Regression
+plt.plot(fpr_test_logistic, tpr_test_logistic, color='limegreen', lw=2,
+         label=f'Logistic Regression (AUC = {roc_auc_test_logistic:.2f})')
 
+# Random Forest
+plt.plot(fpr_test_rf, tpr_test_rf, color='royalblue', lw=2,
+         label=f'Random Forest (AUC = {roc_auc_test_rf:.2f})')
+
+# Logistic GAM
+plt.plot(fpr_test_gam, tpr_test_gam, color='orange', lw=2,
+         label=f'Logistic GAM (AUC = {roc_auc_test_gam:.2f})')
+
+# Diagonal line (random classifier)
+plt.plot([0, 1], [0, 1], color='gray', linestyle='--', lw=1)
+
+# Axes and labels
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
-
-plt.xlabel('False Positive Rate = 1- Specificity', fontsize=8)
+plt.xlabel('False Positive Rate = 1 - Specificity', fontsize=8)
 plt.ylabel('True Positive Rate = Sensitivity', fontsize=8)
-plt.title('Testing curve for Logistic GAM (ROC curve)', fontsize=9)
+plt.title('ROC Curves Comparison', fontsize=9)
 plt.xticks(fontsize=7)
 plt.yticks(fontsize=7)
 
-plt.legend(loc='lower right')
+# Legend and grid
+plt.legend(loc='lower right', fontsize=7)
 plt.grid(True)
-plt.savefig("graphs/gam_curve.png", dpi=300, bbox_inches="tight")
+
+# Save combined figure
+plt.savefig("graphs/roc_combined.png", dpi=300, bbox_inches="tight")
 plt.show()
+
 ```
+
 
 # Results
 
@@ -511,7 +490,7 @@ The Logistic Generative Additive Model has an accuracy of 71%, precision of 13%,
 
 # Conclusion
 
-Logistic Regression has the highest accuracy metric, indicating that it has the highest correction rate for evaluating patients who both did and did not have a heart attack history. Random Forest shows the highest precision score, meaning it has the highest correction rate for evaluating patients who had a heart attack in real life out of the patients who were predicted to have heart attack. However, all of these models have significantly low precision scores, making them unreliable for precision evaluation. This result is anticipated because the heart attack has already happened in the past, and the variables are collected to represent association with heart attack history and not intended for prediction purposes. Logistic Regression has the highest F1 score, and it implies that it may be the optimal model for evaluating heart attack prevalence among the three models because F1 score takes the balance between precision and recall into account. However, all of the F1 scores are low, due to the significant low values in precision.
+Logistic Regression has the highest accuracy metric, indicating that it has the highest correction rate for evaluating patients who both did and did not have a heart attack history. Random Forest shows the highest precision score, meaning it has the highest correction rate for evaluating patients who had a heart attack in real life out of the patients who were predicted to have heart attack. However, all of these models have significantly low precision scores, making them unreliable for precision evaluation. This result is anticipated because the heart attack has already happened in the past, and the variables are collected to represent association with heart attack history and not intended for prediction purposes. Logistic Regression has the highest F1 score, and it implies that it may be the optimal model for evaluating heart attack prevalence among the three models because F1 score takes the balance between precision and recall into account. All of the F1 scores are low, due to the significant low values in precision. But our models are good at finding people who do have heart disease, that is, the models can still meaningfully separate high-risk from low-risk patients..
 
 # Future Work
 
