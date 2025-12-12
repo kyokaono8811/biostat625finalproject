@@ -4,9 +4,9 @@ author:
 - Xiaoyu Lin
 - Kyoka Ono
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 geometry: margin=0.75in
 fontsize: 11pt
 ---
@@ -77,7 +77,7 @@ print("Number of variables:", heart_data.shape[1])
 
 **Variable Selection**
 
-We choose 10 covariates out of 40 for our models based on literature review and use `HadHeartAttack` as the predicted variable
+We choose 10 significant covariates out of 40 for our models based on literature review and use `HadHeartAttack` as the predicted variable
 
 ```{python}
 heart_data = heart_data[[
@@ -292,13 +292,11 @@ from sklearn.metrics import roc_curve, auc, precision_score, recall_score, f1_sc
 from imblearn.under_sampling import RandomUnderSampler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
-from analysis.evaluation import evaluate_model
 ```
 
 ```{python}
 from pygam import LogisticGAM, s
 import time 
-import shap
 ```
 
 ```{python}
@@ -324,16 +322,19 @@ X_train[numeric_vars] = scaler.fit_transform(X_train[numeric_vars])
 X_test[numeric_vars] = scaler.transform(X_test[numeric_vars])
 ```
 
-1.  **Logistic Regression**
+1.  Logistic Regression
 
-```{python}
+```{python, results = "hide"}
 # LogisticRegressionCV automatically 
 start = time.time()
 logistic = LogisticRegressionCV(max_iter=1000, cv=5, random_state=123).fit(X_train_under, y_train_under)
 end = time.time()
+```
 
+```{python}
 print(f"Elapsed: {end - start:.3f} sec")
 ```
+
 
 ```{python}
 # Predicting Values/Probabilities 
@@ -342,20 +343,22 @@ pred_logistic_proba_test = logistic.predict_proba(X_test) # actual probabilities
 ```
 
 
-2.  **Random Forest**
+2.  Random Forest
 
-```{python}
+```{python, results = "hide"}
 random_forest = RandomForestClassifier(random_state = 123)
 
 start = time.time()
 random_forest.fit(X_train_under, y_train_under)
 end = time.time()
-
-print(f"Elapsed: {end - start:.3f} seconds")
 ```
 
 ```{python}
-print(random_forest.get_params())
+print(f"Elapsed: {end - start:.3f} seconds")
+```
+
+```{python, results = "hide"}
+random_forest.get_params()
 ```
 
 ```{python}
@@ -364,9 +367,9 @@ pred_rf_test = random_forest.predict(X_test) # only 0 or 1
 pred_rf_proba_test = random_forest.predict_proba(X_test) # actual probabilities (between 0 and 1)
 ```
 
-3.  **General Additive Model**
+3.  Logistic General Additive Model
 
-```{python}
+```{python, results = "hide"}
 gam = LogisticGAM(n_splines = 20) 
 
 start = time.time()
@@ -374,7 +377,9 @@ start = time.time()
 gam.fit(X_train_under, y_train_under)
 
 end = time.time()
+```
 
+```{python}
 print(f"Elapsed: {end - start:.3f} seconds")
 ```
 
@@ -388,26 +393,7 @@ pred_gam_proba_test = gam.predict_proba(X_test) # actual probabilities (between 
 
 1. Logistic Regression
 
-```{python}
-# F1 Score 
-f1_score_test_logistic = f1_score(y_test, pred_logistic_test) 
-
-# AUROC
-auroc_test_logistic = roc_auc_score(y_test, pred_logistic_proba_test[:,1]) 
-    
-# Accuracy
-accuracy_test_logistic = accuracy_score(y_test, pred_logistic_test)
-
-# Precision
-precision_test_logistic = precision_score(y_test, pred_logistic_test)
-
-# Recall
-recall_test_logistic = recall_score(y_test, pred_logistic_test)
-    
-print(f"Accuracy: {accuracy_test_logistic:.4f}\nPrecision: {precision_test_logistic:.4f}\nRecall: {recall_test_logistic:.4f}\nF1 Score: {f1_score_test_logistic:.4f}\nAUROC: {auroc_test_logistic:.4f}")
-```
-
-```{python}
+```{python, results = "hide"}
 # False Positive Rate, True Positive Rate 
 fpr_test_logistic, tpr_test_logistic, thresholds_test_logistic = roc_curve(y_test, pred_logistic_proba_test[:,1])
         
@@ -415,43 +401,28 @@ fpr_test_logistic, tpr_test_logistic, thresholds_test_logistic = roc_curve(y_tes
 roc_auc_test_logistic = auc(fpr_test_logistic, tpr_test_logistic)
 
 # ROC
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(5, 3))
 plt.plot(fpr_test_logistic, tpr_test_logistic, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_logistic:.2f})')
 plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
 
-
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate = 1- Specificity')
-plt.ylabel('True Positive Rate = Sensitivity')
-plt.title('Testing curve for Logistic Regression (ROC curve)')
+
+plt.xlabel('False Positive Rate = 1 - Specificity', fontsize=8)
+plt.ylabel('True Positive Rate = Sensitivity', fontsize=8)
+plt.title('Testing curve for Logistic Regression (ROC curve)', fontsize=9)
+plt.xticks(fontsize=7)
+plt.yticks(fontsize=7)
+
 plt.legend(loc='lower right')
 plt.grid(True)
 plt.savefig("graphs/log_reg_curve.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```
+
 2. Random Forest
 
-```{python}
-# F1 
-f1_score_test_rf = f1_score(y_test, pred_rf_test) 
-
-# AUROC
-auroc_test_rf = roc_auc_score(y_test, pred_rf_proba_test[:,1]) 
-    
-# Accuracy 
-accuracy_test_rf = accuracy_score(y_test, pred_rf_test)
-
-# Precision
-precision_test_rf = precision_score(y_test, pred_rf_test)
-
-# Recall 
-recall_test_rf = recall_score(y_test, pred_rf_test)
-    
-print(f"Accuracy: {accuracy_test_rf:.4f}\nPrecision: {precision_test_rf:.4f}\nRecall: {recall_test_rf:.4f}\nF1 Score: {f1_score_test_rf:.4f}\nAUROC: {auroc_test_rf:.4f}")
-```
-
-```{python}
+```{python, results = "hide"}
 # Compute ROC curve and area under the curve
 # False Positive Rate, True Positive Rate 
 fpr_test_rf, tpr_test_rf, thresholds_test_rf = roc_curve(y_test, pred_rf_proba_test[:,1])
@@ -460,16 +431,20 @@ fpr_test_rf, tpr_test_rf, thresholds_test_rf = roc_curve(y_test, pred_rf_proba_t
 roc_auc_test_rf = auc(fpr_test_rf, tpr_test_rf)
 
 # ROC
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(5, 3))
 plt.plot(fpr_test_rf, tpr_test_rf, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_rf:.2f})')
 plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
 
 
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate = 1- Specificity')
-plt.ylabel('True Positive Rate = Sensitivity')
-plt.title('Testing curve for Random Forest (ROC curve)')
+
+plt.xlabel('False Positive Rate = 1- Specificity', fontsize=8)
+plt.ylabel('True Positive Rate = Sensitivity', fontsize=8)
+plt.title('Testing curve for Random Forest (ROC curve)', fontsize=9)
+plt.xticks(fontsize=7)
+plt.yticks(fontsize=7)
+
 plt.legend(loc='lower right')
 plt.grid(True)
 plt.savefig("graphs/ran_for_curve.png", dpi=300, bbox_inches="tight")
@@ -478,26 +453,7 @@ plt.show()
 
 3. GAM
 
-```{python}
-# F1 
-f1_score_test_gam = f1_score(y_test, pred_gam_test) 
-
-# AUROC
-auroc_test_gam = roc_auc_score(y_test, pred_gam_proba_test) 
-    
-# Accuracy 
-accuracy_test_gam = accuracy_score(y_test, pred_gam_test)
-
-# Precision
-precision_test_gam = precision_score(y_test, pred_gam_test)
-
-# Recall 
-recall_test_gam = recall_score(y_test, pred_gam_test)
-    
-print(f"Accuracy: {accuracy_test_gam:.4f}\nPrecision: {precision_test_gam:.4f}\nRecall: {recall_test_gam:.4f}\nF1 Score: {f1_score_test_gam:.4f}\nAUROC: {auroc_test_gam:.4f}")
-```
-
-```{python}
+```{python, results = "hide"}
 # Compute ROC curve and area under the curve
 # False Positive Rate, True Positive Rate 
 fpr_test_gam, tpr_test_gam, thresholds_test_gam = roc_curve(y_test, pred_gam_proba_test)
@@ -506,16 +462,20 @@ fpr_test_gam, tpr_test_gam, thresholds_test_gam = roc_curve(y_test, pred_gam_pro
 roc_auc_test_gam = auc(fpr_test_gam, tpr_test_gam)
 
 # ROC
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(5, 3))
 plt.plot(fpr_test_gam, tpr_test_gam, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_gam:.2f})')
 plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
 
 
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
-plt.xlabel('False Positive Rate = 1- Specificity')
-plt.ylabel('True Positive Rate = Sensitivity')
-plt.title('Testing curve for Logistic GAM (ROC curve)')
+
+plt.xlabel('False Positive Rate = 1- Specificity', fontsize=8)
+plt.ylabel('True Positive Rate = Sensitivity', fontsize=8)
+plt.title('Testing curve for Logistic GAM (ROC curve)', fontsize=9)
+plt.xticks(fontsize=7)
+plt.yticks(fontsize=7)
+
 plt.legend(loc='lower right')
 plt.grid(True)
 plt.savefig("graphs/gam_curve.png", dpi=300, bbox_inches="tight")
@@ -525,13 +485,57 @@ plt.show()
 # Results
 
 ```{python}
+results = pd.DataFrame({
+    "Model": ["Logistic Regression", "Random Forest", "Logistic GAM"],
+    "Accuracy": [
+        accuracy_score(y_test, pred_logistic_test),
+        accuracy_score(y_test, pred_rf_test),
+        accuracy_score(y_test, pred_gam_test)
+    ],
+    "Precision": [
+        precision_score(y_test, pred_logistic_test),
+        precision_score(y_test, pred_rf_test),
+        precision_score(y_test, pred_gam_test)
+    ],
+    "Recall": [
+        recall_score(y_test, pred_logistic_test),
+        recall_score(y_test, pred_rf_test),
+        recall_score(y_test, pred_gam_test)
+    ],
+    "F1": [
+        f1_score(y_test, pred_logistic_test),
+        f1_score(y_test, pred_rf_test),
+        f1_score(y_test, pred_gam_test)
+    ],
+    "AUROC": [
+        roc_auc_score(y_test, pred_logistic_proba_test[:,1]),
+        roc_auc_score(y_test, pred_rf_proba_test[:,1]),
+        roc_auc_score(y_test, pred_gam_proba_test)
+    ]
+})
+
+results
 
 ```
 
+The logistic regression has an accuracy of 71%, precision of 13 %, recall of 76%, and F1 score of 22%. The AUROC is 81%. It took 0.5 seconds to run the model.
+
+The random forest has an accuracy of 67%, precision of 11%, recall of  72%, and F1 score of 19%. The AUROC is 76%. The model training time was 1 second.
+
+The Logistic Generative Additive Model has an accuracy of 71%, precision of 13%, recall of 77%, and F1 score of 22%. The AUROC is 81%. The time it took to train the model was 1 second.
+
 # Conclusion
+
+Logistic Regression has the highest accuracy metric, indicating that it has the highest correction rate for evaluating patients who both did and did not have a heart attack history. Random Forest shows the highest precision score, meaning it has the highest correction rate for evaluating patients who had a heart attack in real life out of the patients who were predicted to have heart attack. However, all of these models have significantly low precision scores, making them unreliable for precision evaluation. This result is anticipated because the heart attack has already happened in the past, and the variables are collected to represent association with heart attack history and not intended for prediction purposes. Logistic Regression has the highest F1 score, and it implies that it may be the optimal model for evaluating heart attack prevalence among the three models because F1 score takes the balance between precision and recall into account. However, all of the F1 scores are low, due to the significant low values in precision.
+
+# Future Work
+
+Currently, most of the models use the default hyperparameters from the scikit-learn package; therefore, we can conduct hyperparameter tuning for model enhancement using methods such Grid Search and Random Search. In order to retrieve results with higher F1 scores, the state of the art (SOTA) models such as RNN and XgBoost may be deployed. However, these models are computationally expensive, and hyperparameter tuning for these models is time consuming and requires parallel computing tools like GPUs. Additionally, there is imbalance in predictor variables such as a history of diabetes patients, their smoking status, and race/ethnicity category. Therefore, this may lead the models to cause representation bias where minority groups are underrepresented while the model is going through the training phase. 
 
 # References
 
 -   Pytlak, K. (n.d.). Personal key indicators of heart disease [Data set]. Kaggle. <https://www.kaggle.com/datasets/kamilpytlak/personal-key-indicators-of-heart-disease/data>
 
 -   Centers for Disease Control and Prevention. (2024, December 2). Heart disease risk factors. <https://www.cdc.gov/heart-disease/risk-factors/?CDC_AAref_Val=https://www.cdc.gov/heartdisease/risk_factors.htm>
+
+-   Al-Zaiti, S.S., Martin-Gill, C., Zègre-Hemsey, J.K. et al. Machine learning for ECG diagnosis and risk stratification of occlusion myocardial infarction. Nat Med 29, 1804–1813 (2023). <https://doi.org/10.1038/s41591-023-02396-3>
