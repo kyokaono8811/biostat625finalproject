@@ -1,0 +1,284 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+  11pt,
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={The Application of Machine Learning on Risk Classification of Heart Disease},
+  pdfauthor={Xiaoyu Lin; Kyoka Ono},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{The Application of Machine Learning on Risk Classification of
+Heart Disease}
+\author{Xiaoyu Lin \and Kyoka Ono}
+\date{}
+
+\begin{document}
+\maketitle
+
+GitHub Link:
+\url{https://github.com/kyokaono8811/biostat625finalproject.git}
+
+Contributions:
+
+\begin{itemize}
+\tightlist
+\item
+  Xiaoyu Lin --- ``Data description, Data cleaning\ldots{}''\\
+\item
+  Kyoka Ono --- ``\ldots{}''
+\end{itemize}
+
+\section{Abstract}\label{abstract}
+
+Heart disease is a leading cause of death for adults in the U.S, and
+early detection of key risk factors is essential for prevention. In this
+study, we apply multiple machine learning methods, including logistic
+regression, random forest, GAM, ikNN, XGBoost, and RNN identify the
+significant risk factors of heart disease. We then evaluate model
+performance and compare variable importance across methods using
+evaluation Metrics.
+
+(Some results conclusion)
+
+\section{Introduction}\label{introduction}
+
+Heart disease affects millions of individuals in the U.S, making early
+identification of risk factors a high public-health priority.
+Traditional statistical approaches have identified several predictors,
+but machine learning methods can capture more complex, nonlinear
+relationships.
+
+This project applies several different machine learning algorithms to
+the \texttt{heart\_2022\_no\_nans.csv} dataset from the CDC Behavioral
+Risk Factor Surveillance System (BRFSS) on Kaggle. Our goal is to
+determine which model outputs the highest evaluation metric for
+predicting heart attack, and which variables significantly associated
+with having had a heart attack?
+
+\section{Methods}\label{methods}
+
+\subsubsection{\texorpdfstring{\textbf{Data
+Source}}{Data Source}}\label{data-source}
+
+The dataset contains 40 variables for over 200,000 survey participants
+(all complete cases).
+
+\begin{verbatim}
+
+Number of participants: 246022
+\end{verbatim}
+
+\begin{verbatim}
+Number of variables: 40
+\end{verbatim}
+
+\subsubsection{\texorpdfstring{\textbf{Preprocessing}}{Preprocessing}}\label{preprocessing}
+
+\textbf{Variable Selection}
+
+We choose 10 covariates out of 40 for our models based on literature
+review and use \texttt{HadHeartAttack} as the predicted variable
+
+Outcome Variable:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{HadHeartAttack}: Binary indicator (Yes/No) of whether a doctor
+  diagnosed the respondent with a heart attack.
+\end{itemize}
+
+Predictor Variables:
+
+\begin{itemize}
+\item
+  \texttt{Sex}: Biological sex of the participant (Male/Female).
+\item
+  \texttt{PhysicalActivities}: Whether the participant engaged in
+  physical activities in the past month (Yes/No).
+\item
+  \texttt{SleepHours}: Average number of hours of sleep per night
+  (numeric).
+\item
+  \texttt{HadStroke}: Whether had a stroke (Yes/No).
+\item
+  \texttt{HadDiabetes}: Whether had a diabetes (Yes/No/Yes, but only
+  during pregnancy (female)/No, pre-diabetes or borderline diabetes).
+\item
+  \texttt{SmokerStatus}: Smoking status of the participant (Former
+  smoker/Never smoked/Current smoker -- now smokes every day/Current
+  smoker -- now smokes some days/No).
+\item
+  \texttt{RaceEthnicityCategory}: (White only, Non-Hispanic/Black only,
+  Non-Hispanic/Other race only, Non-Hispanic/Multiracial,
+  Non-Hispanic/Hispanic)
+\item
+  \texttt{AgeCategory}: Age group (18--24, 25--29, \ldots, 80+).
+\item
+  \texttt{BMI}: Body mass index (numeric).
+\item
+  \texttt{AlcoholDrinkers}: Whether a participant is a heavy drinkers
+  (adult men having more than 14 drinks per week and adult women having
+  more than 7 drinks per (Yes/No).
+\end{itemize}
+
+\textbf{Data Cleaning}
+
+We would like to create dummy variables for categorical variables and
+merge equivalent levels.
+
+\subsubsection{\texorpdfstring{\textbf{Data
+Description}}{Data Description}}\label{data-description}
+
+Let's look at the distribution of the variables
+
+\pandocbounded{\includegraphics[keepaspectratio]{final_report_files/figure-latex/unnamed-chunk-7-1.pdf}}
+
+From the graph above, we can see that some categorical variables such as
+\texttt{HadHeartAttack}, \texttt{HadStroke}, and
+\texttt{RaceEthnicityCategory} exhibit noticeable class imbalance. Other
+categorical variables are more balanced. Numerical variables like
+\texttt{SleepHours}, and \texttt{BMI} show skewed distributions.
+
+Now Let us build a correlation table. We use spearman correlation
+because the dataset contains a mixture of categorical and numerical
+variables. Spearman does not assume linearity or normality, making it a
+better measure of association than Pearson for this dataset.
+
+\pandocbounded{\includegraphics[keepaspectratio]{final_report_files/figure-latex/unnamed-chunk-8-3.pdf}}
+
+All pairwise correlations were relatively weak, indicating that no
+individual predictor shows a strong linear association with heart attack
+or with each other. This is expected in multi-factor health datasets,
+where the outcome is influenced by many small effects rather than a
+single dominant variable.
+
+Low pairwise correlations do not imply weak predictive power for
+nonlinear effects, interactions, and combined contributions can still
+provide meaningful classification performance in multivariate models.
+
+\subsubsection{\texorpdfstring{\textbf{Models
+Applied}}{Models Applied}}\label{models-applied}
+
+Highly imbalanced classes may affect model performance if not addressed,
+so we will use the method of undersampling or class weights during model
+training. And to improve model performance, the skewed numerical
+variables should be standardized or centered, especially for algorithms
+sensitive to scale (e.g.~logistic regression).
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Logistic Regression}
+\end{enumerate}
+
+\begin{verbatim}
+LogisticRegression(max_iter=1000)
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  \textbf{Random Forest}
+\end{enumerate}
+
+\begin{verbatim}
+RandomForestClassifier(class_weight='balanced', n_estimators=300,
+                       random_state=42)
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  \textbf{RNN}
+\end{enumerate}
+
+\begin{verbatim}
+<keras.src.callbacks.history.History object at 0x17fe6bee0>
+\end{verbatim}
+
+\begin{verbatim}
+[1m   1/1923[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m46s[0m 24ms/step[1m 209/1923[0m [32m━━[0m[37m━━━━━━━━━━━━━━━━━━[0m [1m0s[0m 241us/step[1m 428/1923[0m [32m━━━━[0m[37m━━━━━━━━━━━━━━━━[0m [1m0s[0m 235us/step[1m 647/1923[0m [32m━━━━━━[0m[37m━━━━━━━━━━━━━━[0m [1m0s[0m 233us/step[1m 868/1923[0m [32m━━━━━━━━━[0m[37m━━━━━━━━━━━[0m [1m0s[0m 231us/step[1m1089/1923[0m [32m━━━━━━━━━━━[0m[37m━━━━━━━━━[0m [1m0s[0m 231us/step[1m1310/1923[0m [32m━━━━━━━━━━━━━[0m[37m━━━━━━━[0m [1m0s[0m 230us/step[1m1533/1923[0m [32m━━━━━━━━━━━━━━━[0m[37m━━━━━[0m [1m0s[0m 229us/step[1m1752/1923[0m [32m━━━━━━━━━━━━━━━━━━[0m[37m━━[0m [1m0s[0m 229us/step[1m1923/1923[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 237us/step[1m1923/1923[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 240us/step
+\end{verbatim}
+
+\section{Results}\label{results}
+
+\section{Conclusion}\label{conclusion}
+
+\section{References}\label{references}
+
+\begin{itemize}
+\item
+  Pytlak, K. (n.d.). Personal key indicators of heart disease {[}Data
+  set{]}. Kaggle.
+  \url{https://www.kaggle.com/datasets/kamilpytlak/personal-key-indicators-of-heart-disease/data}
+\item
+  Centers for Disease Control and Prevention. (2024, December 2). Heart
+  disease risk factors.
+  \url{https://www.cdc.gov/heart-disease/risk-factors/?CDC_AAref_Val=https://www.cdc.gov/heartdisease/risk_factors.htm}
+\end{itemize}
+
+\end{document}

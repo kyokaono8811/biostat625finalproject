@@ -4,35 +4,31 @@ author:
 - Xiaoyu Lin
 - Kyoka Ono
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 geometry: margin=0.75in
 fontsize: 11pt
 ---
+GitHub Link: <https://github.com/kyokaono8811/biostat625finalproject.git>
+
+Contributions: 
+
+-   Xiaoyu Lin — "Data description, Data cleaning..."\
+-   Kyoka Ono — "..."
 
 # Abstract
-
-GitHub Link: <https://github.com/kyokaono8811/biostat625finalproject.git>
 
 Heart disease is a leading cause of death for adults in the U.S, and early detection of key risk factors is essential for prevention. In this study, we apply multiple machine learning methods, including logistic regression, random forest, GAM, ikNN, XGBoost, and RNN identify the significant risk factors of heart disease. We then evaluate model performance and compare variable importance across methods using evaluation Metrics.
 
 (Some results conclusion)
 
-# Contributions
-
--   **Xiaoyu Lin** — "Data description, Data cleaning..."\
--   **Kyoka Ono** — "..."
-
-# Setup
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  echo = TRUE,
-  warning = FALSE,
-  message = FALSE 
+  comment = "",
+  echo = FALSE,
+  message = TRUE,
+  warning = TRUE
 )
 ```
 
@@ -139,20 +135,134 @@ heart_clean = clean_data(heart_data)
 Let's look at the distribution of the variables
 
 ```{python}
-from analysis.description import description
-description(heart_clean)
+# Variables
+categorical_vars = [
+    "HadHeartAttack", "Sex", "PhysicalActivities", "HadStroke",
+    "HadDiabetes", "SmokerStatus", "RaceEthnicityCategory",
+    "AgeCategory", "AlcoholDrinkers"
+]
+    
+numeric_vars = ["SleepHours", "BMI"]
+    
+all_vars = categorical_vars + numeric_vars
+    
+# Order of categorical variables
+category_orders = {
+    "HadHeartAttack": [0, 1],
+    "Sex": [0, 1],
+    "PhysicalActivities": [0, 1],
+    "HadStroke": [0, 1],
+    "HadDiabetes": [0, 1],
+    "AlcoholDrinkers": [0, 1],
+    "SmokerStatus": [0, 1, 2],
+    "RaceEthnicityCategory": [0, 1, 2, 3, 4],
+    "AgeCategory": list(range(1, 14))
+}
+    
+# Layout
+n_plots = len(all_vars)
+n_cols = 3
+n_rows = (n_plots + n_cols - 1) // n_cols
+    
+fig, axes = plt.subplots(
+    n_rows,
+    n_cols,
+    figsize=(20, 2.5 * n_rows),
+    sharey=False
+)
+    
+axes = axes.flatten()
+    
+for i, col in enumerate(all_vars):
+    ax = axes[i]
+    
+    # Categorical variables: bar plots
+    if col in categorical_vars:
+        counts = heart_clean[col].value_counts().reindex(category_orders[col])
+        ax.bar(counts.index, counts.values)
+        ax.set_xticks(category_orders[col])
+        ax.tick_params(axis="x", labelrotation=45, labelsize=10)
+    
+    # Numerical variables: histograms
+    else:
+        ax.hist(heart_clean[col], bins=20)
+        ax.tick_params(axis="x", labelrotation=45, labelsize=10)
+    
+    ax.set_title(col, fontsize=12)
+    ax.tick_params(axis="y", labelsize=10)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    
+# Remove empty panels
+for j in range(len(all_vars), len(axes)):
+    fig.delaxes(axes[j])
+    
+# Shared y-axis label
+fig.text(0.04, 0.5, "Count", va="center", rotation="vertical", fontsize=12)
+    
+# Adjust spacing
+plt.subplots_adjust(
+    wspace=0.2,  # horizontal space
+    hspace=0.3   # vertical space
+)
+# Save the figure
+fig.savefig("graphs/all_variables_plot.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```
 
-From the graph above, we can see that some categorical variables such as `HadHeartAttack`, `HadStroke`, and `RaceEthnicityCategory` exhibit noticeable class imbalance. Highly imbalanced classes may affect model performance if not addressed, so we will use the method of undersampling the majority class during model training. Other categorical variables are more balanced.
+From the graph above, we can see that some categorical variables such as `HadHeartAttack`, `HadStroke`, and `RaceEthnicityCategory` exhibit noticeable class imbalance. Other categorical variables are more balanced. Numerical variables like `SleepHours`, and `BMI` show skewed distributions. 
 
-Numerical variables like `AgeCategory`, `SleepHours`, and `BMI` show skewed distributions. To improve model performance, these variables should be standardized or centered, especially for algorithms sensitive to scale (e.g. logistic regression).
-
-Now Let us build a correlation table. We use spearman correlation because the dataset contains a mixture of binary, ordinal, and continuous variables. Spearman does not assume linearity or normality and is appropriate for ranked relationships, making it a better measure of association than Pearson for this dataset.
+Now Let us build a correlation table. We use spearman correlation because the dataset contains a mixture of categorical and numerical variables. Spearman does not assume linearity or normality, making it a better measure of association than Pearson for this dataset.
 
 ```{python}
-from analysis.correlation import correlation
-correlation(heart_clean)
+vars_of_interest = [
+    "HadHeartAttack",
+    "Sex",
+    "PhysicalActivities",
+    "SleepHours",
+    "HadStroke",
+    "HadDiabetes",
+    "SmokerStatus",
+    "RaceEthnicityCategory",
+    "AgeCategory",
+    "BMI",
+    "AlcoholDrinkers"
+]
+    
+df_corr = heart_clean[vars_of_interest].copy()
+    
+# Compute Spearman correlation
+corr = df_corr.corr(method="spearman")
+    
+# Mask for upper triangle
+mask = np.triu(np.ones_like(corr, dtype=bool))
+    
+fig, ax = plt.subplots(figsize=(7, 4))
+
+sns.heatmap(
+    corr,
+    mask=mask,
+    annot=True,
+    fmt=".2f",
+    cmap="coolwarm",
+    vmin=-1, vmax=1,
+    square=True,
+    linewidths=0.5,
+    annot_kws={"size": 6},
+    cbar_kws={"shrink": 0.7},
+    ax=ax
+)
+
+ax.set_xticklabels(ax.get_xticklabels(), fontsize=6, rotation=45, ha="right")
+ax.set_yticklabels(ax.get_yticklabels(), fontsize=6)
+ax.set_title("Correlation Table", fontsize=9)
+
+cbar = ax.collections[0].colorbar
+cbar.ax.tick_params(labelsize=6)
+
+plt.tight_layout()
+
+fig.savefig("graphs/correlation_table.png", dpi=300, bbox_inches="tight")
 plt.show()
 ```
 
@@ -162,13 +272,271 @@ Low pairwise correlations do not imply weak predictive power for nonlinear effec
 
 ### **Models Applied**
 
+Highly imbalanced classes may affect model performance if not addressed, so we will use the method of undersampling or class weights during model training. And to improve model performance, the skewed numerical variables should be standardized or centered, especially for algorithms sensitive to scale (e.g. logistic regression).
+
+```{r}
+#reticulate::py_install("scikit-learn")
+#reticulate::py_install("imblearn")
+#reticulate::py_install("tensorflow")
+#reticulate::py_install("pygam")
+#reticulate::py_install("shap")
+```
+
+```{python}
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler as ss
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import roc_curve, auc, precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
+from imblearn.under_sampling import RandomUnderSampler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from analysis.evaluation import evaluate_model
+```
+
+```{python}
+from pygam import LogisticGAM, s
+import time 
+import shap
+```
+
+
+```{python}
+X = heart_clean.drop(columns=["HadHeartAttack"])
+y = heart_clean["HadHeartAttack"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=123, stratify=y
+)
+
+# Undersampling
+rus = RandomUnderSampler(random_state=42)
+X_train_under, y_train_under = rus.fit_resample(X_train, y_train)
+
+# Standardize
+scaler = ss()
+
+# Fit only on training data (after and before undersampling)
+X_train_under[numeric_vars] = scaler.fit_transform(X_train_under[numeric_vars])
+X_train[numeric_vars] = scaler.fit_transform(X_train[numeric_vars])
+
+# Apply the same transformation to test data
+X_test[numeric_vars] = scaler.transform(X_test[numeric_vars])
+```
+
 1.  **Logistic Regression**
 
-2.  
+```{python}
+# LogisticRegressionCV automatically 
+start = time.time()
+logistic = LogisticRegressionCV(max_iter=1000, cv=5, random_state=123).fit(X_train_under, y_train_under)
+end = time.time()
+
+print(f"Elapsed: {end - start:.3f} sec")
+```
+
+```{python}
+# Predicting Values/Probabilities 
+pred_logistic_test = logistic.predict(X_test) # only 0 or 1 
+pred_logistic_proba_test = logistic.predict_proba(X_test) # actual probabilities (between 0 and 1)
+```
+
+
+2.  **Random Forest**
+
+```{python}
+random_forest = RandomForestClassifier(random_state = 123)
+
+start = time.time()
+random_forest.fit(X_train_under, y_train_under)
+end = time.time()
+
+print(f"Elapsed: {end - start:.3f} seconds")
+```
+
+```{python}
+print(random_forest.get_params())
+```
+
+```{python}
+# Predicting Values/Probabilities 
+pred_rf_test = random_forest.predict(X_test) # only 0 or 1 
+pred_rf_proba_test = random_forest.predict_proba(X_test) # actual probabilities (between 0 and 1)
+```
+
+3.  **General Additive Model**
+
+```{python}
+gam = LogisticGAM(n_splines = 20) 
+
+start = time.time()
+
+gam.fit(X_train_under, y_train_under)
+
+end = time.time()
+
+print(f"Elapsed: {end - start:.3f} seconds")
+```
+
+```{python}
+# Predicting Values/Probabilities 
+pred_gam_test = gam.predict(X_test) # only 0 or 1 
+pred_gam_proba_test = gam.predict_proba(X_test) # actual probabilities (between 0 and 1)
+```
 
 ### **Evaluation Metrics**
 
+```{python}
+# F1 Score 
+f1_score_test_logistic = f1_score(y_test, pred_logistic_test) 
+
+# AUROC
+auroc_test_logistic = roc_auc_score(y_test, pred_logistic_proba_test[:,1]) 
+    
+# Accuracy
+accuracy_test_logistic = accuracy_score(y_test, pred_logistic_test)
+
+# Precision
+precision_test_logistic = precision_score(y_test, pred_logistic_test)
+
+# Recall
+recall_test_logistic = recall_score(y_test, pred_logistic_test)
+    
+print(f"Accuracy: {accuracy_test_logistic:.4f}\nPrecision: {precision_test_logistic:.4f}\nRecall: {recall_test_logistic:.4f}\nF1 Score: {f1_score_test_logistic:.4f}\nAUROC: {auroc_test_logistic:.4f}")
+```
+
+```{python}
+# False Positive Rate, True Positive Rate 
+fpr_test_logistic, tpr_test_logistic, thresholds_test_logistic = roc_curve(Y_test, pred_logistic_proba_test[:,1])
+        
+# AUC
+roc_auc_test_logistic = auc(fpr_test_logistic, tpr_test_logistic)
+
+# ROC
+plt.figure(figsize=(8, 6))
+plt.plot(fpr_test_logistic, tpr_test_logistic, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_logistic:.2f})')
+plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
+
+
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate = 1- Specificity')
+plt.ylabel('True Positive Rate = Sensitivity')
+plt.title('Testing curve for Logistic Regression (ROC curve)')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+```
+
+```{python}
+# F1 
+f1_score_test_rf = f1_score(y_test, pred_rf_test) 
+
+# AUROC
+auroc_test_rf = roc_auc_score(y_test, pred_rf_proba_test[:,1]) 
+    
+# Accuracy 
+accuracy_test_rf = accuracy_score(y_test, pred_rf_test)
+
+# Precision
+precision_test_rf = precision_score(y_test, pred_rf_test)
+
+# Recall 
+recall_test_rf = recall_score(y_test, pred_rf_test)
+    
+print(f"Accuracy: {accuracy_test_rf:.4f}\nPrecision: {precision_test_rf:.4f}\nRecall: {recall_test_rf:.4f}\nF1 Score: {f1_score_test_rf:.4f}\nAUROC: {auroc_test_rf:.4f}")
+```
+
+```{python}
+# Compute ROC curve and area under the curve
+# False Positive Rate, True Positive Rate 
+fpr_test_rf, tpr_test_rf, thresholds_test_rf = roc_curve(y_test, pred_rf_proba_test[:,1])
+        
+# AUC
+roc_auc_test_rf = auc(fpr_test_rf, tpr_test_rf)
+
+# ROC
+plt.figure(figsize=(8, 6))
+plt.plot(fpr_test_rf, tpr_test_rf, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_rf:.2f})')
+plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
+
+
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate = 1- Specificity')
+plt.ylabel('True Positive Rate = Sensitivity')
+plt.title('Testing curve for Random Forest (ROC curve)')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+```
+
+Shapley values for Random Forest 
+
+```{python}
+random_forest = RandomForestClassifier(random_state = 123)
+
+start = time.time()
+random_forest.fit(X_train, y_train)
+end = time.time()
+
+print(f"Elapsed: {end - start:.3f} seconds")
+
+explainer = shap.TreeExplainer(random_forest)
+shap_values = explainer.shap_values(X_test)
+shap.summary_plot(shap_values, X_test.sample(n = 1000, random_state = 123))
+plt.show()
+```
+
+```{python}
+# F1 
+f1_score_test_gam = f1_score(y_test, pred_gam_test) 
+
+# AUROC
+auroc_test_gam = roc_auc_score(y_test, pred_gam_proba_test) 
+    
+# Accuracy 
+accuracy_test_gam = accuracy_score(y_test, pred_gam_test)
+
+# Precision
+precision_test_gam = precision_score(y_test, pred_gam_test)
+
+# Recall 
+recall_test_gam = recall_score(y_test, pred_gam_test)
+    
+print(f"Accuracy: {accuracy_test_gam:.4f}\nPrecision: {precision_test_gam:.4f}\nRecall: {recall_test_gam:.4f}\nF1 Score: {f1_score_test_gam:.4f}\nAUROC: {auroc_test_gam:.4f}")
+```
+
+```{python}
+# Compute ROC curve and area under the curve
+# False Positive Rate, True Positive Rate 
+fpr_test_gam, tpr_test_gam, thresholds_test_gam = roc_curve(y_test, pred_gam_proba_test)
+        
+# AUC
+roc_auc_test_gam = auc(fpr_test_gam, tpr_test_gam)
+
+# ROC
+plt.figure(figsize=(8, 6))
+plt.plot(fpr_test_gam, tpr_test_gam, color='limegreen', lw=2, label=f'ROC curve (AUC = {roc_auc_test_gam:.2f})')
+plt.plot([0, 1], [0, 1], color='gray', linestyle='--')  
+
+
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate = 1- Specificity')
+plt.ylabel('True Positive Rate = Sensitivity')
+plt.title('Testing curve for Logistic GAM (ROC curve)')
+plt.legend(loc='lower right')
+plt.grid(True)
+plt.show()
+```
+
 # Results
+
+```{python}
+
+```
 
 # Conclusion
 
