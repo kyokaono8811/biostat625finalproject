@@ -61,7 +61,7 @@ not.
 knitr::include_graphics("graphs/roc_combined.png")
 ```
 
-<img src="graphs/roc_combined.png" width="1370" />
+<img src="graphs/roc_combined.png" width="50%" style="display: block; margin: auto;" />
 
 ## Contributions
 

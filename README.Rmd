@@ -54,7 +54,7 @@ import matplotlib.pyplot as plt
 
 All the models computed high AUROC, presenting high performance ability in classifying between patients who had heart attack and those who did not. 
 
-```{r}
+```{r, out.width="50%", fig.align = "center"}
 knitr::include_graphics("graphs/roc_combined.png")
 ```
 
