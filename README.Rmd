@@ -50,7 +50,7 @@ import pandas as pd
 import matplotlib.pyplot as plt 
 ```
 
-## Resuts Summary 
+## Summary Results
 
 All the models computed high AUROC, presenting high performance ability in classifying between patients who had heart attack and those who did not. 
 
