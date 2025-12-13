@@ -30,23 +30,24 @@ To run the python code on R Markdown, run the following code on the R console fi
 ```{r}
 #install.packages("reticulate")
 ```
-
-Then, run the following code on R chunk. 
+Then, run the following code on R chunk.
 
 ```{r}
-#library(reticulate)
+library(reticulate)
 ```
 
-Install and import all the necessary packages (e.g. pandas, matplotlib) on the python chunk.
+Install these packages on R chunk.
 
 ```{r}
 #reticulate::py_install("matplotlib")
 #reticulate::py_install("pandas")
 ```
 
+Import all the necessary packages (e.g. pandas, matplotlib) on Python chunk.
+
 ```{python}
-#import pandas as pd
-#import matplotlib.pyplot as plt 
+import pandas as pd
+import matplotlib.pyplot as plt 
 ```
 
 ## Resuts Summary 
@@ -54,7 +55,7 @@ Install and import all the necessary packages (e.g. pandas, matplotlib) on the p
 All the models computed high AUROC, presenting high performance ability in classifying between patients who had heart attack and those who did not. 
 
 ```{r}
-knitr::include_graphics("/Users/kyokaono/Desktop/roc_curve_comparison.png")
+knitr::include_graphics("graphs/roc_combined.png")
 ```
 
 ## Contributions

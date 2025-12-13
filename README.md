@@ -33,20 +33,22 @@ console first.
 Then, run the following code on R chunk.
 
 ``` r
-#library(reticulate)
+library(reticulate)
 ```
 
-Install and import all the necessary packages (e.g. pandas, matplotlib)
-on the python chunk.
+Install these packages on R chunk.
 
 ``` r
 #reticulate::py_install("matplotlib")
 #reticulate::py_install("pandas")
 ```
 
+Import all the necessary packages (e.g. pandas, matplotlib) on Python
+chunk.
+
 ``` python
-#import pandas as pd
-#import matplotlib.pyplot as plt 
+import pandas as pd
+import matplotlib.pyplot as plt 
 ```
 
 ## Resuts Summary
@@ -56,10 +58,10 @@ in classifying between patients who had heart attack and those who did
 not.
 
 ``` r
-knitr::include_graphics("/Users/kyokaono/Desktop/roc_curve_comparison.png")
+knitr::include_graphics("graphs/roc_combined.png")
 ```
 
-<img src="../roc_curve_comparison.png" width="1140" />
+<img src="graphs/roc_combined.png" width="1370" />
 
 ## Contributions
 
